@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,23 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
+          {/* Routes for Patients */}
+          <Route path="/patients" element={<div className="p-8 text-center"><h1 className="text-2xl">Gestion des Patients</h1><p className="text-gray-600 mt-4">Module en cours de développement...</p></div>} />
+          <Route path="/patients/new" element={<div className="p-8 text-center"><h1 className="text-2xl">Nouveau Patient</h1><p className="text-gray-600 mt-4">Formulaire en cours de développement...</p></div>} />
+          <Route path="/patients/edit/:id" element={<div className="p-8 text-center"><h1 className="text-2xl">Modifier Patient</h1><p className="text-gray-600 mt-4">Formulaire en cours de développement...</p></div>} />
+          
+          {/* Routes for Medecins */}
+          <Route path="/medecins" element={<div className="p-8 text-center"><h1 className="text-2xl">Gestion des Médecins</h1><p className="text-gray-600 mt-4">Module en cours de développement...</p></div>} />
+          <Route path="/medecins/new" element={<div className="p-8 text-center"><h1 className="text-2xl">Nouveau Médecin</h1><p className="text-gray-600 mt-4">Formulaire en cours de développement...</p></div>} />
+          <Route path="/medecins/edit/:id" element={<div className="p-8 text-center"><h1 className="text-2xl">Modifier Médecin</h1><p className="text-gray-600 mt-4">Formulaire en cours de développement...</p></div>} />
+          
+          {/* Routes for Rendez-vous */}
+          <Route path="/rendezvous" element={<div className="p-8 text-center"><h1 className="text-2xl">Gestion des Rendez-vous</h1><p className="text-gray-600 mt-4">Module en cours de développement...</p></div>} />
+          <Route path="/rendezvous/new" element={<div className="p-8 text-center"><h1 className="text-2xl">Nouveau Rendez-vous</h1><p className="text-gray-600 mt-4">Formulaire en cours de développement...</p></div>} />
+          <Route path="/rendezvous/:id" element={<div className="p-8 text-center"><h1 className="text-2xl">Détail Rendez-vous</h1><p className="text-gray-600 mt-4">Détail en cours de développement...</p></div>} />
+          
+          {/* Catch-all route for 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
