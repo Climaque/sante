@@ -24,7 +24,7 @@ interface Patient {
 }
 
 const PatientList = () => {
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]); // Initialisation explicite avec tableau vide
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -35,8 +35,11 @@ const PatientList = () => {
   const fetchPatients = async () => {
     try {
       const response = await patientsService.getAll();
-      setPatients(response.data);
+      // S'assurer que response.data est un tableau
+      setPatients(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
+      console.error('Erreur lors du chargement des patients:', error);
+      setPatients([]); // S'assurer qu'on a toujours un tableau
       toast({
         title: "Erreur",
         description: "Impossible de charger la liste des patients",
@@ -104,7 +107,7 @@ const PatientList = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {patients.map((patient) => (
+        {Array.isArray(patients) && patients.map((patient) => (
           <Card key={patient.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -146,7 +149,7 @@ const PatientList = () => {
                 </div>
               </div>
               
-              {patient.symptomes && patient.symptomes.length > 0 && (
+              {patient.symptomes && Array.isArray(patient.symptomes) && patient.symptomes.length > 0 && (
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Symptômes:</p>
                   <div className="flex flex-wrap gap-1">
@@ -189,7 +192,7 @@ const PatientList = () => {
         ))}
       </div>
 
-      {patients.length === 0 && (
+      {(!Array.isArray(patients) || patients.length === 0) && (
         <div className="text-center py-12">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">Aucun patient trouvé</h3>

@@ -29,7 +29,7 @@ const statutLabels = {
 };
 
 const RendezVousList = () => {
-  const [rendezvous, setRendezVous] = useState<RendezVous[]>([]);
+  const [rendezvous, setRendezVous] = useState<RendezVous[]>([]); // Initialisation explicite avec tableau vide
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('TOUS');
   const { toast } = useToast();
@@ -41,8 +41,11 @@ const RendezVousList = () => {
   const fetchRendezVous = async () => {
     try {
       const response = await rendezvousService.getAll();
-      setRendezVous(response.data);
+      // S'assurer que response.data est un tableau
+      setRendezVous(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
+      console.error('Erreur lors du chargement des rendez-vous:', error);
+      setRendezVous([]); // S'assurer qu'on a toujours un tableau
       toast({
         title: "Erreur",
         description: "Impossible de charger la liste des rendez-vous",
@@ -94,8 +97,8 @@ const RendezVousList = () => {
   };
 
   const filteredRendezVous = filter === 'TOUS' 
-    ? rendezvous 
-    : rendezvous.filter(rdv => rdv.statut === filter);
+    ? (Array.isArray(rendezvous) ? rendezvous : [])
+    : (Array.isArray(rendezvous) ? rendezvous.filter(rdv => rdv.statut === filter) : []);
 
   if (loading) {
     return (
@@ -143,7 +146,7 @@ const RendezVousList = () => {
 
       {/* Liste des rendez-vous */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredRendezVous.map((rdv) => (
+        {Array.isArray(filteredRendezVous) && filteredRendezVous.map((rdv) => (
           <Card key={rdv.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -224,7 +227,7 @@ const RendezVousList = () => {
         ))}
       </div>
 
-      {filteredRendezVous.length === 0 && (
+      {(!Array.isArray(filteredRendezVous) || filteredRendezVous.length === 0) && (
         <div className="text-center py-12">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">

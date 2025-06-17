@@ -22,7 +22,7 @@ interface Medecin {
 }
 
 const MedecinList = () => {
-  const [medecins, setMedecins] = useState<Medecin[]>([]);
+  const [medecins, setMedecins] = useState<Medecin[]>([]); // Initialisation explicite avec tableau vide
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -33,8 +33,11 @@ const MedecinList = () => {
   const fetchMedecins = async () => {
     try {
       const response = await medecinsService.getAll();
-      setMedecins(response.data);
+      // S'assurer que response.data est un tableau
+      setMedecins(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
+      console.error('Erreur lors du chargement des médecins:', error);
+      setMedecins([]); // S'assurer qu'on a toujours un tableau
       toast({
         title: "Erreur",
         description: "Impossible de charger la liste des médecins",
@@ -91,7 +94,7 @@ const MedecinList = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {medecins.map((medecin) => (
+        {Array.isArray(medecins) && medecins.map((medecin) => (
           <Card key={medecin.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -146,7 +149,7 @@ const MedecinList = () => {
         ))}
       </div>
 
-      {medecins.length === 0 && (
+      {(!Array.isArray(medecins) || medecins.length === 0) && (
         <div className="text-center py-12">
           <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">Aucun médecin trouvé</h3>
