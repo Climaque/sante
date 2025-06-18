@@ -3,10 +3,11 @@ import axios from 'axios';
 
 // Configuration de base pour les appels API
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // Remplace par ton URL de backend
+  baseURL: 'http://localhost:8081/api', // Port correct pour Spring Boot
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // Timeout de 10 secondes
 });
 
 // Intercepteur pour ajouter l'authentification si nécessaire
