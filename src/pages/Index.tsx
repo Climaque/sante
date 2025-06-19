@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import LoginForm from '@/components/auth/LoginForm';
+import RegisterForm from '@/components/auth/RegisterForm';
 import { 
   Video, 
   MapPin, 
@@ -18,6 +20,9 @@ import {
 } from 'lucide-react';
 
 const Index = () => {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
       {/* Header */}
@@ -37,8 +42,23 @@ const Index = () => {
               <Link to="/centres-sante" className="text-gray-600 hover:text-blue-600">Centres de Santé</Link>
             </nav>
             <div className="flex items-center space-x-2">
-              <Button variant="outline">Connexion</Button>
-              <Button>S'inscrire</Button>
+              <Dialog open={showLogin} onOpenChange={setShowLogin}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Connexion</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <LoginForm onClose={() => setShowLogin(false)} />
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={showRegister} onOpenChange={setShowRegister}>
+                <DialogTrigger asChild>
+                  <Button>S'inscrire</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <RegisterForm onClose={() => setShowRegister(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
