@@ -2,376 +2,231 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { MapPin, Star, Clock, Phone, Video, Navigation, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import MapComponent from '@/components/common/MapComponent';
-
-interface MedecinProche {
-  id: number;
-  nom: string;
-  prenom: string;
-  specialite: string;
-  distance: number;
-  notation: number;
-  nbAvis: number;
-  adresse: string;
-  ville: string;
-  telephone: string;
-  tarif: number; // En Franc CFA
-  disponible: boolean;
-  prochainCreneau: string;
-  latitude: number;
-  longitude: number;
-}
+import { medecinsService, type Medecin } from '@/services/api';
+import { 
+  MapPin, 
+  Phone, 
+  Star, 
+  Clock, 
+  Video, 
+  Calendar,
+  Search,
+  Navigation
+} from 'lucide-react';
 
 const MedecinsProches = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [medecins, setMedecins] = useState<MedecinProche[]>([]);
+  const [medecins, setMedecins] = useState<Medecin[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [searchRadius, setSearchRadius] = useState(10);
-  const [adresseRecherche, setAdresseRecherche] = useState('');
-
-  // Données de simulation adaptées au contexte africain
-  const medecinsSimules: MedecinProche[] = [
-    {
-      id: 1,
-      nom: "Koné",
-      prenom: "Dr. Awa",
-      specialite: "Médecine générale",
-      distance: 0.8,
-      notation: 4.8,
-      nbAvis: 127,
-      adresse: "Boulevard du 13 Janvier",
-      ville: "Lomé",
-      telephone: "+228 22 45 67 89",
-      tarif: 15000, // 15,000 FCFA
-      disponible: true,
-      prochainCreneau: "Aujourd'hui 14h30",
-      latitude: 6.1319,
-      longitude: 1.2228
-    },
-    {
-      id: 2,
-      nom: "Traoré",
-      prenom: "Dr. Mamadou",
-      specialite: "Cardiologie",
-      distance: 1.2,
-      notation: 4.9,
-      nbAvis: 89,
-      adresse: "Avenue de la Paix",
-      ville: "Lomé",
-      telephone: "+228 22 34 56 78",
-      tarif: 25000, // 25,000 FCFA
-      disponible: true,
-      prochainCreneau: "Demain 9h00",
-      latitude: 6.1375,
-      longitude: 1.2123
-    },
-    {
-      id: 3,
-      nom: "Mensah",
-      prenom: "Dr. Akosua",
-      specialite: "Pédiatrie",
-      distance: 2.1,
-      notation: 4.7,
-      nbAvis: 156,
-      adresse: "Rue du Commerce",
-      ville: "Lomé",
-      telephone: "+228 22 67 89 01",
-      tarif: 20000, // 20,000 FCFA
-      disponible: false,
-      prochainCreneau: "Lundi 10h15",
-      latitude: 6.1289,
-      longitude: 1.2345
-    },
-    {
-      id: 4,
-      nom: "Adjovi",
-      prenom: "Dr. Koffi",
-      specialite: "Dermatologie",
-      distance: 3.5,
-      notation: 4.6,
-      nbAvis: 72,
-      adresse: "Quartier Bè",
-      ville: "Lomé",
-      telephone: "+228 22 89 01 23",
-      tarif: 18000, // 18,000 FCFA
-      disponible: true,
-      prochainCreneau: "Cet après-midi 16h00",
-      latitude: 6.1456,
-      longitude: 1.2567
-    },
-    {
-      id: 5,
-      nom: "Bako",
-      prenom: "Dr. Fatimata",
-      specialite: "Gynécologie",
-      distance: 4.2,
-      notation: 4.9,
-      nbAvis: 203,
-      adresse: "Avenue du Golfe de Guinée",
-      ville: "Lomé",
-      telephone: "+228 22 12 34 56",
-      tarif: 30000, // 30,000 FCFA
-      disponible: true,
-      prochainCreneau: "Mercredi 8h30",
-      latitude: 6.1198,
-      longitude: 1.2398
-    }
-  ];
+  const { toast } = useToast();
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    // Charger tous les médecins validés au démarrage
+    const fetchMedecins = async () => {
+      setLoading(true);
+      try {
+        const response = await medecinsService.getAll();
+        // Filtrer seulement les médecins validés et disponibles
+        const medecinsDisponibles = response.data.filter(m => m.validated && m.disponible);
+        setMedecins(medecinsDisponibles);
+      } catch (error) {
+        console.error('Erreur lors du chargement des médecins:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la liste des médecins",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getCurrentLocation = () => {
-    setLoading(true);
+    fetchMedecins();
+  }, [toast]);
+
+  const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(location);
-          fetchMedecinsProches(location.lat, location.lng, searchRadius);
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          searchNearbyDoctors(latitude, longitude);
         },
         (error) => {
           console.error('Erreur de géolocalisation:', error);
-          // Utiliser Lomé par défaut
-          const defaultLocation = { lat: 6.1319, lng: 1.2228 };
-          setUserLocation(defaultLocation);
-          fetchMedecinsProches(defaultLocation.lat, defaultLocation.lng, searchRadius);
           toast({
             title: "Géolocalisation",
-            description: "Position par défaut utilisée (Lomé centre)",
-            variant: "default",
+            description: "Impossible d'obtenir votre position. Affichage de tous les médecins disponibles.",
+            variant: "destructive",
           });
         }
       );
     } else {
-      // Utiliser Lomé par défaut
-      const defaultLocation = { lat: 6.1319, lng: 1.2228 };
-      setUserLocation(defaultLocation);
-      fetchMedecinsProches(defaultLocation.lat, defaultLocation.lng, searchRadius);
-    }
-    setLoading(false);
-  };
-
-  const fetchMedecinsProches = async (lat: number, lng: number, radius: number) => {
-    try {
-      // Simulation API - remplacer par vraie API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setMedecins(medecinsSimules.filter(m => m.distance <= radius));
-    } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les médecins proches",
+        title: "Géolocalisation non supportée",
+        description: "Votre navigateur ne supporte pas la géolocalisation.",
         variant: "destructive",
       });
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
+  const searchNearbyDoctors = async (lat: number, lng: number, radius: number = 10) => {
+    setLoading(true);
+    try {
+      const response = await medecinsService.getProches(lat, lng, radius);
+      setMedecins(response.data.filter(m => m.validated && m.disponible));
+      toast({
+        title: "Médecins trouvés",
+        description: `${response.data.length} médecins trouvés dans un rayon de ${radius}km`,
+      });
+    } catch (error) {
+      console.error('Erreur lors de la recherche de médecins proches:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de trouver des médecins près de vous",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReserverConsultation = (medecin: MedecinProche, type: 'physique' | 'teleconsultation') => {
-    toast({
-      title: "Réservation",
-      description: `Rendez-vous ${type} avec ${medecin.prenom} ${medecin.nom} demandé`,
-    });
-    // Rediriger vers le formulaire de RDV
-    navigate('/rendezvous/new', { 
-      state: { medecin, type } 
-    });
+  const filteredMedecins = medecins.filter(medecin =>
+    medecin.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medecin.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medecin.specialite.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medecin.ville.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatTarif = (tarif?: number) => {
+    if (!tarif) return 'Tarif non spécifié';
+    return `${tarif.toLocaleString()} FCFA`;
+  };
+
+  const calculateDistance = (medecin: Medecin) => {
+    if (!userLocation || !medecin.latitude || !medecin.longitude) return null;
+    
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (medecin.latitude - userLocation.lat) * Math.PI / 180;
+    const dLon = (medecin.longitude - userLocation.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(medecin.latitude * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return Math.round(distance * 10) / 10; // Arrondi à 1 décimale
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/')}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Médecins proches de vous</h1>
-              <p className="text-gray-600 mt-2">Trouvez et consultez les médecins dans votre région</p>
-            </div>
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-4">Médecins Proches</h1>
+        <p className="text-gray-600 mb-6">
+          Trouvez des médecins qualifiés près de chez vous en Côte d'Ivoire
+        </p>
+        
+        {/* Barre de recherche et géolocalisation */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Rechercher par nom, spécialité ou ville..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Filtres de recherche</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="adresse">Adresse de recherche</Label>
-                    <Input
-                      id="adresse"
-                      value={adresseRecherche}
-                      onChange={(e) => setAdresseRecherche(e.target.value)}
-                      placeholder="Votre adresse..."
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="rayon">Rayon de recherche (km)</Label>
-                    <Input
-                      id="rayon"
-                      type="number"
-                      value={searchRadius}
-                      onChange={(e) => setSearchRadius(Number(e.target.value))}
-                      min="1"
-                      max="50"
-                    />
-                  </div>
-                  <Button 
-                    onClick={getCurrentLocation} 
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    <Navigation className="h-4 w-4 mr-2" />
-                    {loading ? 'Recherche...' : 'Localiser autour de moi'}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {userLocation && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Carte</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <MapComponent
-                      latitude={userLocation.lat}
-                      longitude={userLocation.lng}
-                      address="Votre position"
-                      height="200px"
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            <div className="lg:col-span-3">
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Recherche des médecins proches...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">
-                      {medecins.length} médecin(s) trouvé(s)
-                    </h2>
-                  </div>
-
-                  {medecins.map((medecin) => (
-                    <Card key={medecin.id} className="hover:shadow-lg transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-4">
-                              <div>
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                  {medecin.prenom} {medecin.nom}
-                                </h3>
-                                <p className="text-blue-600 font-medium">{medecin.specialite}</p>
-                                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                                  <div className="flex items-center">
-                                    <MapPin className="h-4 w-4 mr-1" />
-                                    {medecin.distance} km
-                                  </div>
-                                  <div className="flex items-center">
-                                    <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                                    {medecin.notation} ({medecin.nbAvis} avis)
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <Badge variant={medecin.disponible ? "default" : "secondary"}>
-                                  {medecin.disponible ? "Disponible" : "Occupé"}
-                                </Badge>
-                                <p className="text-lg font-bold text-gray-900 mt-2">
-                                  {formatPrice(medecin.tarif)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div>
-                                <p className="text-sm text-gray-600">
-                                  <MapPin className="h-4 w-4 inline mr-1" />
-                                  {medecin.adresse}, {medecin.ville}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  <Phone className="h-4 w-4 inline mr-1" />
-                                  {medecin.telephone}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">
-                                  <Clock className="h-4 w-4 inline mr-1" />
-                                  Prochain créneau: {medecin.prochainCreneau}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:ml-6">
-                            <Button 
-                              onClick={() => handleReserverConsultation(medecin, 'teleconsultation')}
-                              className="bg-blue-600 hover:bg-blue-700"
-                              disabled={!medecin.disponible}
-                            >
-                              <Video className="h-4 w-4 mr-2" />
-                              Téléconsultation
-                            </Button>
-                            <Button 
-                              variant="outline"
-                              onClick={() => handleReserverConsultation(medecin, 'physique')}
-                            >
-                              <MapPin className="h-4 w-4 mr-2" />
-                              Consultation physique
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-
-                  {medecins.length === 0 && (
-                    <div className="text-center py-12">
-                      <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900">Aucun médecin trouvé</h3>
-                      <p className="text-gray-500 mt-2">
-                        Essayez d'augmenter le rayon de recherche ou changer d'adresse.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <Button onClick={getUserLocation} variant="outline" disabled={loading}>
+            <Navigation className="h-4 w-4 mr-2" />
+            Utiliser ma position
+          </Button>
         </div>
       </div>
+
+      {/* Liste des médecins */}
+      {loading ? (
+        <div className="text-center py-8">
+          <p>Recherche des médecins...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMedecins.map((medecin) => {
+            const distance = calculateDistance(medecin);
+            return (
+              <Card key={medecin.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">
+                        Dr. {medecin.prenom} {medecin.nom}
+                      </CardTitle>
+                      <CardDescription className="flex items-center mt-1">
+                        <Badge variant="secondary" className="mr-2">
+                          {medecin.specialite}
+                        </Badge>
+                        {medecin.disponible && (
+                          <Badge className="bg-green-500">Disponible</Badge>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                      <span className="text-sm">4.8</span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span>{medecin.ville}</span>
+                    {distance && (
+                      <span className="ml-2 text-blue-600 font-medium">
+                        ({distance} km)
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>{medecin.telephone}</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span>Disponible maintenant</span>
+                  </div>
+
+                  <div className="text-sm font-medium text-green-600">
+                    {formatTarif(medecin.tarif)}
+                  </div>
+
+                  <div className="space-y-2 pt-3">
+                    <Button className="w-full" size="sm">
+                      <Video className="h-4 w-4 mr-2" />
+                      Téléconsultation
+                    </Button>
+                    <Button variant="outline" className="w-full" size="sm">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Prendre RDV
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {filteredMedecins.length === 0 && !loading && (
+        <div className="text-center py-8">
+          <p className="text-gray-600">Aucun médecin trouvé avec vos critères de recherche.</p>
+        </div>
+      )}
     </div>
   );
 };
