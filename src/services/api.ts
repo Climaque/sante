@@ -72,7 +72,7 @@ interface Medecin {
   longitude?: number;
   validated?: boolean;
   experience?: string;
-  tarif?: number;
+  tarif?: number; // En Franc CFA
   disponibilites?: string[];
 }
 
@@ -87,7 +87,7 @@ interface RendezVous {
   dateRendezVous: string;
   heureRendezVous: string;
   motif: string;
-  statut: string;
+  statut: 'EN_ATTENTE' | 'ACCEPTE' | 'REFUSE' | 'TERMINE';
   notes?: string;
   type: 'teleconsultation' | 'physique';
   lienVideo?: string;

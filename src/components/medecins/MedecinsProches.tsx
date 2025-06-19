@@ -21,7 +21,7 @@ interface MedecinProche {
   adresse: string;
   ville: string;
   telephone: string;
-  tarif: number;
+  tarif: number; // En Franc CFA
   disponible: boolean;
   prochainCreneau: string;
   latitude: number;
@@ -37,58 +37,92 @@ const MedecinsProches = () => {
   const [searchRadius, setSearchRadius] = useState(10);
   const [adresseRecherche, setAdresseRecherche] = useState('');
 
-  // Données de simulation
+  // Données de simulation adaptées au contexte africain
   const medecinsSimules: MedecinProche[] = [
     {
       id: 1,
-      nom: "Martin",
-      prenom: "Dr. Sophie",
+      nom: "Koné",
+      prenom: "Dr. Awa",
       specialite: "Médecine générale",
       distance: 0.8,
       notation: 4.8,
       nbAvis: 127,
-      adresse: "15 Rue de la Paix",
-      ville: "Paris 1er",
-      telephone: "01 42 36 12 34",
-      tarif: 25,
+      adresse: "Boulevard du 13 Janvier",
+      ville: "Lomé",
+      telephone: "+228 22 45 67 89",
+      tarif: 15000, // 15,000 FCFA
       disponible: true,
       prochainCreneau: "Aujourd'hui 14h30",
-      latitude: 48.8566,
-      longitude: 2.3522
+      latitude: 6.1319,
+      longitude: 1.2228
     },
     {
       id: 2,
-      nom: "Dubois",
-      prenom: "Dr. Pierre",
+      nom: "Traoré",
+      prenom: "Dr. Mamadou",
       specialite: "Cardiologie",
       distance: 1.2,
       notation: 4.9,
       nbAvis: 89,
-      adresse: "22 Boulevard Saint-Germain",
-      ville: "Paris 6e",
-      telephone: "01 43 25 67 89",
-      tarif: 50,
+      adresse: "Avenue de la Paix",
+      ville: "Lomé",
+      telephone: "+228 22 34 56 78",
+      tarif: 25000, // 25,000 FCFA
       disponible: true,
       prochainCreneau: "Demain 9h00",
-      latitude: 48.8534,
-      longitude: 2.3488
+      latitude: 6.1375,
+      longitude: 1.2123
     },
     {
       id: 3,
-      nom: "Rousseau",
-      prenom: "Dr. Marie",
-      specialite: "Dermatologie",
+      nom: "Mensah",
+      prenom: "Dr. Akosua",
+      specialite: "Pédiatrie",
       distance: 2.1,
       notation: 4.7,
       nbAvis: 156,
-      adresse: "8 Avenue des Champs-Élysées",
-      ville: "Paris 8e",
-      telephone: "01 42 89 34 56",
-      tarif: 60,
+      adresse: "Rue du Commerce",
+      ville: "Lomé",
+      telephone: "+228 22 67 89 01",
+      tarif: 20000, // 20,000 FCFA
       disponible: false,
       prochainCreneau: "Lundi 10h15",
-      latitude: 48.8698,
-      longitude: 2.3076
+      latitude: 6.1289,
+      longitude: 1.2345
+    },
+    {
+      id: 4,
+      nom: "Adjovi",
+      prenom: "Dr. Koffi",
+      specialite: "Dermatologie",
+      distance: 3.5,
+      notation: 4.6,
+      nbAvis: 72,
+      adresse: "Quartier Bè",
+      ville: "Lomé",
+      telephone: "+228 22 89 01 23",
+      tarif: 18000, // 18,000 FCFA
+      disponible: true,
+      prochainCreneau: "Cet après-midi 16h00",
+      latitude: 6.1456,
+      longitude: 1.2567
+    },
+    {
+      id: 5,
+      nom: "Bako",
+      prenom: "Dr. Fatimata",
+      specialite: "Gynécologie",
+      distance: 4.2,
+      notation: 4.9,
+      nbAvis: 203,
+      adresse: "Avenue du Golfe de Guinée",
+      ville: "Lomé",
+      telephone: "+228 22 12 34 56",
+      tarif: 30000, // 30,000 FCFA
+      disponible: true,
+      prochainCreneau: "Mercredi 8h30",
+      latitude: 6.1198,
+      longitude: 1.2398
     }
   ];
 
@@ -110,20 +144,20 @@ const MedecinsProches = () => {
         },
         (error) => {
           console.error('Erreur de géolocalisation:', error);
-          // Utiliser Paris par défaut
-          const defaultLocation = { lat: 48.8566, lng: 2.3522 };
+          // Utiliser Lomé par défaut
+          const defaultLocation = { lat: 6.1319, lng: 1.2228 };
           setUserLocation(defaultLocation);
           fetchMedecinsProches(defaultLocation.lat, defaultLocation.lng, searchRadius);
           toast({
             title: "Géolocalisation",
-            description: "Position par défaut utilisée (Paris centre)",
+            description: "Position par défaut utilisée (Lomé centre)",
             variant: "default",
           });
         }
       );
     } else {
-      // Utiliser Paris par défaut
-      const defaultLocation = { lat: 48.8566, lng: 2.3522 };
+      // Utiliser Lomé par défaut
+      const defaultLocation = { lat: 6.1319, lng: 1.2228 };
       setUserLocation(defaultLocation);
       fetchMedecinsProches(defaultLocation.lat, defaultLocation.lng, searchRadius);
     }
@@ -142,6 +176,10 @@ const MedecinsProches = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
   };
 
   const handleReserverConsultation = (medecin: MedecinProche, type: 'physique' | 'teleconsultation') => {
@@ -271,7 +309,9 @@ const MedecinsProches = () => {
                                 <Badge variant={medecin.disponible ? "default" : "secondary"}>
                                   {medecin.disponible ? "Disponible" : "Occupé"}
                                 </Badge>
-                                <p className="text-lg font-bold text-gray-900 mt-2">{medecin.tarif}€</p>
+                                <p className="text-lg font-bold text-gray-900 mt-2">
+                                  {formatPrice(medecin.tarif)}
+                                </p>
                               </div>
                             </div>
 
