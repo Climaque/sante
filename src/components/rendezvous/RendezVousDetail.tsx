@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  MapPin, 
+  Phone, 
+  Video, 
+  FileText, 
+  CheckCircle, 
+  XCircle, 
+  ArrowLeft,
+  Mail,
+  Stethoscope
+} from 'lucide-react';
 import { rendezvousService, type RendezVous } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import { Video, Phone, Calendar, Clock, User, FileText } from 'lucide-react';
 
 // Type étendu pour les détails du rendez-vous
 interface RendezVousDetail extends RendezVous {
@@ -28,6 +41,7 @@ interface RendezVousDetail extends RendezVous {
 
 const RendezVousDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [rendezVous, setRendezVous] = useState<RendezVousDetail | null>(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
