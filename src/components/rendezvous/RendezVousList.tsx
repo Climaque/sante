@@ -4,35 +4,24 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, UserCheck, Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
-import { rendezvousService } from '@/services/api';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { rendezvousService, type RendezVous } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-
-interface RendezVous {
-  id: number;
-  patientNom: string;
-  patientPrenom: string;
-  medecinNom: string;
-  medecinPrenom: string;
-  dateRendezVous: string;
-  heureRendezVous: string;
-  motif: string;
-  statut: 'EN_ATTENTE' | 'ACCEPTE' | 'REFUSE' | 'TERMINE';
-  notes?: string;
-}
-
-const statutLabels = {
-  'EN_ATTENTE': { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
-  'ACCEPTE': { label: 'Accepté', color: 'bg-green-100 text-green-800' },
-  'REFUSE': { label: 'Refusé', color: 'bg-red-100 text-red-800' },
-  'TERMINE': { label: 'Terminé', color: 'bg-blue-100 text-blue-800' }
-};
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  Video, 
+  MapPin,
+  Plus,
+  RefreshCw
+} from 'lucide-react';
 
 const RendezVousList = () => {
-  const [rendezvous, setRendezVous] = useState<RendezVous[]>([]); // Initialisation explicite avec tableau vide
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('TOUS');
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [rendezvous, setRendezVous] = useState<RendezVous[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRendezVous();
@@ -41,14 +30,21 @@ const RendezVousList = () => {
   const fetchRendezVous = async () => {
     try {
       const response = await rendezvousService.getAll();
-      // S'assurer que response.data est un tableau
-      setRendezVous(Array.isArray(response.data) ? response.data : []);
+      // Filtrer les rendez-vous selon le rôle de l'utilisateur
+      const filteredRdv = response.data.filter(rdv => {
+        if (user?.role === 'patient') {
+          return rdv.patientId === user.id;
+        } else if (user?.role === 'medecin') {
+          return rdv.medecinId === user.id;
+        }
+        return true; // Admin voit tous les rendez-vous
+      });
+      setRendezVous(filteredRdv);
     } catch (error) {
       console.error('Erreur lors du chargement des rendez-vous:', error);
-      setRendezVous([]); // S'assurer qu'on a toujours un tableau
       toast({
         title: "Erreur",
-        description: "Impossible de charger la liste des rendez-vous",
+        description: "Impossible de charger les rendez-vous",
         variant: "destructive",
       });
     } finally {
@@ -56,194 +52,148 @@ const RendezVousList = () => {
     }
   };
 
-  const handleAccepter = async (id: number) => {
-    try {
-      await rendezvousService.accept(id);
-      setRendezVous(rendezvous.map(rdv => 
-        rdv.id === id ? { ...rdv, statut: 'ACCEPTE' } : rdv
-      ));
-      toast({
-        title: "Succès",
-        description: "Rendez-vous accepté",
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de l'acceptation",
-        variant: "destructive",
-      });
+  const getStatutBadge = (statut: string) => {
+    switch (statut) {
+      case 'EN_ATTENTE':
+        return <Badge variant="secondary">En attente</Badge>;
+      case 'ACCEPTE':
+        return <Badge className="bg-green-500">Accepté</Badge>;
+      case 'REFUSE':
+        return <Badge variant="destructive">Refusé</Badge>;
+      case 'TERMINE':
+        return <Badge variant="outline">Terminé</Badge>;
+      default:
+        return <Badge>{statut}</Badge>;
     }
   };
 
-  const handleRefuser = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir refuser ce rendez-vous ?')) {
-      try {
-        await rendezvousService.reject(id);
-        setRendezVous(rendezvous.map(rdv => 
-          rdv.id === id ? { ...rdv, statut: 'REFUSE' } : rdv
-        ));
-        toast({
-          title: "Succès",
-          description: "Rendez-vous refusé",
-        });
-      } catch (error) {
-        toast({
-          title: "Erreur",
-          description: "Erreur lors du refus",
-          variant: "destructive",
-        });
-      }
-    }
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
-
-  const filteredRendezVous = filter === 'TOUS' 
-    ? (Array.isArray(rendezvous) ? rendezvous : [])
-    : (Array.isArray(rendezvous) ? rendezvous.filter(rdv => rdv.statut === filter) : []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement des rendez-vous...</p>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Rendez-vous</h1>
-          <p className="text-gray-600 mt-2">Liste des consultations</p>
+          <h1 className="text-3xl font-bold">Mes Rendez-vous</h1>
+          <p className="text-gray-600 mt-2">
+            Gérez vos consultations médicales
+          </p>
         </div>
-        <Link to="/rendezvous/new">
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau RDV
-          </Button>
-        </Link>
+        
+        {user?.role === 'patient' && (
+          <Link to="/patient/nouveau-rdv">
+            <Button className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Nouveau rendez-vous</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
-      {/* Filtres */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            {['TOUS', 'EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'TERMINE'].map((statut) => (
-              <Button
-                key={statut}
-                variant={filter === statut ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter(statut)}
-              >
-                {statut === 'TOUS' ? 'Tous' : statutLabels[statut as keyof typeof statutLabels]?.label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Liste des rendez-vous */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {Array.isArray(filteredRendezVous) && filteredRendezVous.map((rdv) => (
-          <Card key={rdv.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-purple-100 rounded-full">
-                    <Calendar className="h-6 w-6 text-purple-600" />
-                  </div>
+      {rendezvous.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Aucun rendez-vous</h3>
+            <p className="text-gray-600 mb-6">
+              {user?.role === 'patient' 
+                ? "Vous n'avez pas encore de rendez-vous planifié."
+                : "Aucun rendez-vous n'a été planifié avec vous."
+              }
+            </p>
+            {user?.role === 'patient' && (
+              <Link to="/patient/nouveau-rdv">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Planifier un rendez-vous
+                </Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {rendezvous.map((rdv) => (
+            <Card key={rdv.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">
-                      RDV #{rdv.id}
+                    <CardTitle className="flex items-center space-x-2">
+                      {user?.role === 'patient' ? (
+                        <span>Dr. {rdv.medecinPrenom} {rdv.medecinNom}</span>
+                      ) : (
+                        <span>{rdv.patientPrenom} {rdv.patientNom}</span>
+                      )}
+                      {rdv.type === 'teleconsultation' ? (
+                        <Video className="h-4 w-4 text-blue-600" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-green-600" />
+                      )}
                     </CardTitle>
                     <CardDescription>
-                      {new Date(rdv.dateRendezVous).toLocaleDateString()}
+                      {rdv.type === 'teleconsultation' ? 'Téléconsultation' : 'Consultation physique'}
                     </CardDescription>
                   </div>
+                  {getStatutBadge(rdv.statut)}
                 </div>
-                <Badge className={statutLabels[rdv.statut].color}>
-                  {statutLabels[rdv.statut].label}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <User className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Patient:</span>
-                  <span className="ml-2">{rdv.patientPrenom} {rdv.patientNom}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Médecin:</span>
-                  <span className="ml-2">Dr. {rdv.medecinPrenom} {rdv.medecinNom}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Clock className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Heure:</span>
-                  <span className="ml-2">{rdv.heureRendezVous}</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Motif:</span>
-                  <p className="mt-1 text-gray-800">{rdv.motif}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <Link to={`/rendezvous/${rdv.id}`}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Voir détails
-                  </Button>
-                </Link>
-                
-                {rdv.statut === 'EN_ATTENTE' && (
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      onClick={() => handleAccepter(rdv.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Accepter
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => handleRefuser(rdv.id)}
-                      className="flex-1"
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Refuser
-                    </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>{formatDate(rdv.dateRendezVous)}</span>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span>{rdv.heureRendezVous}</span>
+                  </div>
 
-      {(!Array.isArray(filteredRendezVous) || filteredRendezVous.length === 0) && (
-        <div className="text-center py-12">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">
-            {filter === 'TOUS' ? 'Aucun rendez-vous trouvé' : `Aucun rendez-vous ${statutLabels[filter as keyof typeof statutLabels]?.label.toLowerCase()}`}
-          </h3>
-          <p className="text-gray-500 mt-2">
-            {filter === 'TOUS' ? 'Commencez par planifier votre premier rendez-vous.' : 'Changez le filtre pour voir d\'autres rendez-vous.'}
-          </p>
-          {filter === 'TOUS' && (
-            <Link to="/rendezvous/new">
-              <Button className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Planifier un rendez-vous
-              </Button>
-            </Link>
-          )}
+                  <div className="text-sm">
+                    <strong>Motif :</strong> {rdv.motif}
+                  </div>
+
+                  {rdv.notes && (
+                    <div className="text-sm text-gray-600">
+                      <strong>Notes :</strong> {rdv.notes}
+                    </div>
+                  )}
+
+                  <div className="flex space-x-2 pt-3">
+                    <Link to={`/rendezvous/${rdv.id}`}>
+                      <Button variant="outline" size="sm">
+                        Voir détails
+                      </Button>
+                    </Link>
+                    
+                    {rdv.statut === 'ACCEPTE' && rdv.type === 'teleconsultation' && (
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Video className="h-4 w-4 mr-2" />
+                        Rejoindre
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
