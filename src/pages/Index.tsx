@@ -6,37 +6,36 @@ import {
   UserCheck, 
   Calendar, 
   Activity,
-  Plus,
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Video,
+  Monitor,
+  Smartphone
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [stats, setStats] = useState({
     patients: 0,
     medecins: 0,
     rendezvous: 0,
-    rendezvousEnAttente: 0
+    rendezvousEnAttente: 0,
+    teleconsultations: 0,
+    teleconsultationsAujourdhui: 0
   });
 
   // Simulation des données - remplace par tes appels API
   useEffect(() => {
-    // Simulation de récupération des stats depuis ton API
     const fetchStats = async () => {
-      // Remplace par tes vrais appels API
-      // const patientsResponse = await api.get('/patients');
-      // const medecinsResponse = await api.get('/medecins');
-      // const rendezvousResponse = await api.get('/rendezvous');
-      
       // Données simulées pour l'instant
       setStats({
         patients: 156,
         medecins: 23,
         rendezvous: 89,
-        rendezvousEnAttente: 12
+        rendezvousEnAttente: 12,
+        teleconsultations: 34,
+        teleconsultationsAujourdhui: 8
       });
     };
 
@@ -79,30 +78,24 @@ const Index = () => {
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       link: "/rendezvous"
-    }
-  ];
-
-  const quickActions = [
-    {
-      title: "Nouveau Patient",
-      description: "Ajouter un patient",
-      icon: Plus,
-      link: "/patients/new",
-      color: "bg-blue-600 hover:bg-blue-700"
     },
     {
-      title: "Nouveau Médecin",
-      description: "Ajouter un médecin",
-      icon: Plus,
-      link: "/medecins/new",
-      color: "bg-green-600 hover:bg-green-700"
+      title: "Téléconsultations",
+      value: stats.teleconsultations,
+      description: "Ce mois-ci",
+      icon: Video,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      link: "/rendezvous"
     },
     {
-      title: "Nouveau RDV",
-      description: "Planifier consultation",
-      icon: Calendar,
-      link: "/rendezvous/new",
-      color: "bg-purple-600 hover:bg-purple-700"
+      title: "Télé Aujourd'hui",
+      value: stats.teleconsultationsAujourdhui,
+      description: "En cours/planifiées",
+      icon: Monitor,
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+      link: "/rendezvous"
     }
   ];
 
@@ -131,7 +124,7 @@ const Index = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {statCards.map((card, index) => {
             const IconComponent = card.icon;
             return (
@@ -159,24 +152,63 @@ const Index = () => {
           })}
         </div>
 
-        {/* Quick Actions */}
+        {/* Téléconsultation Section avec Images */}
         <div className="mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Actions Rapides</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => {
-              const IconComponent = action.icon;
-              return (
-                <Link key={index} to={action.link}>
-                  <Button className={`w-full h-20 ${action.color} text-white flex flex-col items-center justify-center space-y-2`}>
-                    <IconComponent className="h-6 w-6" />
-                    <div className="text-center">
-                      <div className="font-medium">{action.title}</div>
-                      <div className="text-xs opacity-90">{action.description}</div>
-                    </div>
-                  </Button>
-                </Link>
-              );
-            })}
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Téléconsultations</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="overflow-hidden">
+              <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                <img 
+                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop" 
+                  alt="Téléconsultation"
+                  className="w-full h-full object-cover opacity-80"
+                />
+              </div>
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Consultations Virtuelles</h4>
+                <p className="text-sm text-gray-600 mb-3">Facilite l'accès aux soins à distance</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-blue-600">{stats.teleconsultations}</span>
+                  <Smartphone className="h-5 w-5 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <div className="h-32 bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                <img 
+                  src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=200&fit=crop" 
+                  alt="Médecin en ligne"
+                  className="w-full h-full object-cover opacity-80"
+                />
+              </div>
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Médecins Connectés</h4>
+                <p className="text-sm text-gray-600 mb-3">Praticiens disponibles en ligne</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-green-600">12</span>
+                  <Monitor className="h-5 w-5 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
+                <img 
+                  src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=200&fit=crop" 
+                  alt="Patient en téléconsultation"
+                  className="w-full h-full object-cover opacity-80"
+                />
+              </div>
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Satisfaction Patient</h4>
+                <p className="text-sm text-gray-600 mb-3">Taux de satisfaction téléconsultation</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-purple-600">94%</span>
+                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -269,7 +301,7 @@ const Index = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-600">Nouveau patient ajouté: Marie Dubois</span>
+                  <span className="text-gray-600">Téléconsultation terminée: Dr. Laurent - Marie Dubois</span>
                   <span className="text-gray-400">il y a 5 min</span>
                 </div>
                 <div className="flex items-center space-x-3 text-sm">
@@ -281,6 +313,11 @@ const Index = () => {
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                   <span className="text-gray-600">Nouveau médecin: Dr. Sophie Laurent</span>
                   <span className="text-gray-400">il y a 1h</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-gray-600">Téléconsultation planifiée pour 16h30</span>
+                  <span className="text-gray-400">il y a 2h</span>
                 </div>
               </div>
             </CardContent>
