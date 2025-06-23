@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -11,9 +10,11 @@ import {
   CheckCircle,
   Video,
   Monitor,
-  Smartphone
+  Smartphone,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [stats, setStats] = useState({
@@ -110,6 +111,12 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">Santé+ Admin</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/medecins/new">
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouveau Médecin
+                </Button>
+              </Link>
               <span className="text-sm text-gray-500">Dernière mise à jour: {new Date().toLocaleTimeString()}</span>
             </div>
           </div>
