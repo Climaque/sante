@@ -10,6 +10,9 @@ import Medecins from "./pages/Medecins";
 import RendezVous from "./pages/RendezVous";
 import NotFound from "./pages/NotFound";
 
+// Create a client
+const queryClient = new QueryClient();
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
